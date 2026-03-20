@@ -1,0 +1,21 @@
+### React ###
+node_modules/
+build/
+.env
+.env.local
+.env.*.local
+
+### IDE ###
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+### OS ###
+.DS_Store
+Thumbs.db
+
+### Dependencies ###
+package-lock.json
+yarn.lock
