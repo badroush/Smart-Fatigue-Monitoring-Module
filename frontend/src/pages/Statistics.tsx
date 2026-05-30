@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Line, Bar, Pie } from 'react-chartjs-2';
-import { apiGet } from '../services/api';
+import { useState, useEffect } from "react";
+import { Line, Bar, Pie } from "react-chartjs-2";
+import { apiGet } from "../services/api";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -12,7 +12,8 @@ import {
   Title,
   Tooltip,
   Legend,
-} from 'chart.js';
+  Filler,
+} from "chart.js";
 
 ChartJS.register(
   CategoryScale,
@@ -23,130 +24,127 @@ ChartJS.register(
   ArcElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler,
 );
 
-interface StatistiquesData {
+interface GlobalStats {
+  totalVehicules: number;
+  vehiculesActifs: number;
+  alertesActives: number;
+  alertesModuleActives: number;
   totalPaquets: number;
-  moyenneScore: number;
-  maxScore: number;
-  minScore: number;
+  moyenneScoreGlobal: number;
   repartitionNiveaux: Record<string, number>;
-  historique: Array<{
-    date: string;
-    score: number;
-    niveau: string;
-  }>;
-}
-
-// Ajoute ce type après les autres interfaces
-interface StatistiquesResponse {
-  totalPaquets: number;
-  derniereCommunication: string | null;
-  statut: string;
-  isMonitored: boolean;
-  moyenneScore?: number;
-  maxScore?: number;
-  minScore?: number;
-  repartitionNiveaux?: Record<string, number>;
+  repartitionVehicules: Record<string, number>;
+  repartitionConducteurs: Record<string, number>;
+  evolutionJournaliere: Array<{ date: string; evenements: number }>;
 }
 
 export default function StatisticsPage() {
-  const [stats, setStats] = useState<StatistiquesData | null>(null);
+  const [stats, setStats] = useState<GlobalStats>({
+    totalVehicules: 0,
+    vehiculesActifs: 0,
+    alertesActives: 0,
+    alertesModuleActives: 0,
+    totalPaquets: 0,
+    moyenneScoreGlobal: 0,
+    repartitionNiveaux: {},
+    repartitionVehicules: {},
+    repartitionConducteurs: {},
+    evolutionJournaliere: [],
+  });
   const [loading, setLoading] = useState(true);
-  const [periode, setPeriode] = useState('7j');
+  const [periode, setPeriode] = useState("7j");
 
-  // Simuler les données (à remplacer par l'API plus tard)
- // Remplace le useEffect existant par celui-ci
-useEffect(() => {
-  const fetchStats = async () => {
-    try {
-      setLoading(true);
-      // 🔑 ID du véhicule (remplace par ton ID réel)
-      const VEHICULE_ID = 'd92dbc25-238f-11';
-      const response = await apiGet<StatistiquesResponse>(`/statistics/${VEHICULE_ID}`);
-      
-      if (response.success && response.data) {
-        // Convertir la réponse API en format attendu
-        const statsData: StatistiquesData = {
-          totalPaquets: response.data.totalPaquets,
-          moyenneScore: response.data.moyenneScore || 0,
-          maxScore: response.data.maxScore || 0,
-          minScore: response.data.minScore || 0,
-          repartitionNiveaux: response.data.repartitionNiveaux || {},
-          historique: [], // À implémenter plus tard
-        };
-        setStats(statsData);
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setLoading(true);
+        const response = await apiGet<GlobalStats>("/statistics/global");
+
+        if (response.success && response.data) {
+          setStats({
+            totalVehicules: response.data.totalVehicules || 0,
+            vehiculesActifs: response.data.vehiculesActifs || 0,
+            alertesActives: response.data.alertesActives || 0,
+            alertesModuleActives: response.data.alertesModuleActives || 0,
+            totalPaquets: response.data.totalPaquets || 0,
+            moyenneScoreGlobal: response.data.moyenneScoreGlobal || 0,
+            repartitionNiveaux: response.data.repartitionNiveaux || {},
+            repartitionVehicules: response.data.repartitionVehicules || {},
+            repartitionConducteurs: response.data.repartitionConducteurs || {},
+            evolutionJournaliere: response.data.evolutionJournaliere || [],
+          });
+        }
+      } catch (err) {
+        console.error("Erreur chargement statistiques:", err);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error('Erreur chargement statistiques:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
-  fetchStats();
-  const interval = setInterval(fetchStats, 60000); // Rafraîchir toutes les 60s
-  return () => clearInterval(interval);
-}, [periode]);
+    fetchStats();
+    const interval = setInterval(fetchStats, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
-  // Données pour le graphique linéaire
+  // Données pour le graphique linéaire (évolution temporelle)
   const lineData = {
-    labels: stats?.historique.slice(-14).map(h => h.date) || [],
+    labels: (stats?.evolutionJournaliere || []).map((e) => e.date) || [],
     datasets: [
       {
-        label: 'Score de vigilance',
-        data: stats?.historique.slice(-14).map(h => h.score) || [],
-        borderColor: '#1e3a8a',
-        backgroundColor: 'rgba(30, 58, 138, 0.1)',
+        label: "Événements journaliers",
+        data:
+          (stats?.evolutionJournaliere || []).map((e) => e.evenements) || [],
+        borderColor: "#1e3a8a",
+        backgroundColor: "rgba(30, 58, 138, 0.1)",
         tension: 0.3,
         fill: true,
       },
     ],
   };
 
-  // Données pour le graphique en barres
+  // Données pour la répartition des niveaux
+  const niveauLabels = [
+    "NORMAL",
+    "FATIGUE_LEGERE",
+    "FATIGUE_MODEREE",
+    "FATIGUE_SEVERE",
+    "SOMNOLENCE_CRITIQUE",
+  ];
+  const niveauColors = ["#10b981", "#fbbf24", "#f59e0b", "#ef4444", "#dc2626"];
+
   const barData = {
-    labels: ['Normal', 'Légère', 'Modérée', 'Sévère', 'Critique'],
+    labels: niveauLabels.map((l) =>
+      l.replace("FATIGUE_", "").replace("_", " ").toLowerCase(),
+    ),
     datasets: [
       {
-        label: 'Nombre d\'événements',
-        data: [
-          stats?.repartitionNiveaux['NORMAL'] || 0,
-          stats?.repartitionNiveaux['FATIGUE_LEGERE'] || 0,
-          stats?.repartitionNiveaux['FATIGUE_MODEREE'] || 0,
-          stats?.repartitionNiveaux['FATIGUE_SEVERE'] || 0,
-          stats?.repartitionNiveaux['SOMNOLENCE_CRITIQUE'] || 0,
-        ],
-        backgroundColor: [
-          '#10b981', // Vert
-          '#fbbf24', // Jaune
-          '#f59e0b', // Orange
-          '#ef4444', // Rouge
-          '#dc2626', // Rouge foncé
-        ],
+        label: "Nombre d'événements",
+        data: niveauLabels.map((n) => stats?.repartitionNiveaux?.[n] || 0),
+        backgroundColor: niveauColors,
       },
     ],
   };
 
-  // Données pour le graphique circulaire
+  // Données pour la répartition par véhicule
   const pieData = {
-    labels: ['Normal', 'Fatigue légère', 'Fatigue modérée', 'Fatigue sévère', 'Somnolence critique'],
+    labels: Object.keys(stats?.repartitionVehicules || {}),
     datasets: [
       {
-        data: [
-          stats?.repartitionNiveaux['NORMAL'] || 0,
-          stats?.repartitionNiveaux['FATIGUE_LEGERE'] || 0,
-          stats?.repartitionNiveaux['FATIGUE_MODEREE'] || 0,
-          stats?.repartitionNiveaux['FATIGUE_SEVERE'] || 0,
-          stats?.repartitionNiveaux['SOMNOLENCE_CRITIQUE'] || 0,
-        ],
+        data: Object.values(stats?.repartitionVehicules || {}),
         backgroundColor: [
-          '#10b981',
-          '#fbbf24',
-          '#f59e0b',
-          '#ef4444',
-          '#dc2626',
+          "#1e3a8a",
+          "#0ea5e9",
+          "#10b981",
+          "#f59e0b",
+          "#ef4444",
+          "#8b5cf6",
+          "#ec4899",
+          "#64748b",
+          "#f97316",
+          "#22c55e",
         ],
         borderWidth: 1,
       },
@@ -156,202 +154,187 @@ useEffect(() => {
   const options = {
     responsive: true,
     plugins: {
-      legend: {
-        position: 'top' as const,
-      },
-      title: {
-        display: true,
-        text: 'Évolution de la vigilance (14 derniers jours)',
-      },
+      legend: { position: "top" as const },
+      title: { display: true, text: "Évolution des événements" },
     },
   };
 
   const barOptions = {
     responsive: true,
     plugins: {
-      legend: {
-        position: 'top' as const,
-      },
-      title: {
-        display: true,
-        text: 'Répartition des niveaux de vigilance',
-      },
+      legend: { position: "top" as const },
+      title: { display: true, text: "Répartition des niveaux de vigilance" },
     },
   };
 
   const pieOptions = {
     responsive: true,
     plugins: {
-      legend: {
-        position: 'right' as const,
-      },
-      title: {
-        display: true,
-        text: 'Répartition globale',
-      },
+      legend: { position: "right" as const },
+      title: { display: true, text: "Répartition par véhicule" },
     },
   };
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-[#1e3a8a] mb-2">📈 Statistiques</h1>
-          <p className="text-gray-600">Analyse détaillée des événements de fatigue</p>
-        </div>
-        <div className="flex space-x-2">
-          <select
-            value={periode}
-            onChange={(e) => setPeriode(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]"
-          >
-            <option value="24h">24 heures</option>
-            <option value="7j">7 jours</option>
-            <option value="30j">30 jours</option>
-            <option value="90j">90 jours</option>
-          </select>
-        </div>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-[#1e3a8a]">
-          <div className="text-sm text-gray-500 mb-1">Total événements</div>
-          <div className="text-4xl font-bold text-[#1e3a8a]">
-            {loading ? '...' : stats?.totalPaquets}
+    <div className="min-h-full space-y-4">
+      <div className="dashboard-panel overflow-hidden">
+        <div className="dashboard-panel-header flex flex-col gap-3 border-l-4 border-emerald-700 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Indicateurs agrégés</p>
+            <h1 className="text-xl font-bold tracking-tight text-slate-100">Statistiques</h1>
+            <p className="mt-0.5 text-xs text-slate-400">Vue globale flotte et événements</p>
           </div>
-        </div>
-        
-        <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-[#10b981]">
-          <div className="text-sm text-gray-500 mb-1">Score moyen</div>
-          <div className="text-4xl font-bold text-[#10b981]">
-            {loading ? '...' : stats?.moyenneScore?.toFixed(1)}
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-[#f59e0b]">
-          <div className="text-sm text-gray-500 mb-1">Score maximum</div>
-          <div className="text-4xl font-bold text-[#f59e0b]">
-            {loading ? '...' : stats?.maxScore}
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-[#dc2626]">
-          <div className="text-sm text-gray-500 mb-1">Événements critiques</div>
-          <div className="text-4xl font-bold text-[#dc2626]">
-            {loading ? '...' : stats?.repartitionNiveaux['SOMNOLENCE_CRITIQUE'] || 0}
+          <div className="flex items-center gap-2">
+            <label htmlFor="stat-periode" className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Période
+            </label>
+            <select
+              id="stat-periode"
+              value={periode}
+              onChange={(e) => setPeriode(e.target.value)}
+              className="border border-slate-500 bg-slate-900 px-3 py-2 text-xs font-mono text-slate-100 focus:border-amber-600 focus:outline-none"
+            >
+              <option value="24h">24 h</option>
+              <option value="7j">7 jours</option>
+              <option value="30j">30 jours</option>
+              <option value="90j">90 jours</option>
+            </select>
           </div>
         </div>
       </div>
 
-      {/* Graphiques */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4">Évolution temporelle</h2>
-          {loading ? (
-            <div className="h-80 flex items-center justify-center text-gray-500">
-              Chargement des données...
-            </div>
-          ) : (
-            <div className="h-80">
-              <Line data={lineData} options={options} />
-            </div>
-          )}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="dashboard-panel border-t-4 border-t-slate-600 p-3">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Véhicules</div>
+          <div className="mt-1 font-mono text-2xl font-bold tabular-nums text-slate-800">{loading ? "—" : stats?.totalVehicules}</div>
         </div>
-        
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4">Répartition des niveaux</h2>
-          {loading ? (
-            <div className="h-80 flex items-center justify-center text-gray-500">
-              Chargement des données...
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="h-64">
-                <Bar data={barData} options={barOptions} />
+        <div className="dashboard-panel border-t-4 border-t-emerald-600 p-3">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Actifs</div>
+          <div className="mt-1 font-mono text-2xl font-bold tabular-nums text-emerald-800">{loading ? "—" : stats?.vehiculesActifs}</div>
+        </div>
+        <div className="dashboard-panel border-t-4 border-t-red-600 p-3">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Alertes fatigue</div>
+          <div className="mt-1 font-mono text-2xl font-bold tabular-nums text-red-800">{loading ? "—" : stats?.alertesActives}</div>
+        </div>
+        <div className="dashboard-panel border-t-4 border-t-amber-500 p-3">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Alertes module</div>
+          <div className="mt-1 font-mono text-2xl font-bold tabular-nums text-amber-900">{loading ? "—" : stats?.alertesModuleActives}</div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="dashboard-panel overflow-hidden">
+          <div className="dashboard-panel-header border-l-4 border-sky-600 px-3 py-2">
+            <h2 className="text-[11px] font-bold uppercase tracking-[0.15em]">Évolution temporelle</h2>
+          </div>
+          <div className="border-t border-slate-400/60 bg-white p-4">
+            {loading ? (
+              <div className="flex h-80 items-center justify-center text-xs uppercase tracking-wide text-slate-500">Chargement…</div>
+            ) : (
+              <div className="h-80">
+                <Line data={lineData} options={options} />
               </div>
-              <div className="h-64">
-                <Pie data={pieData} options={pieOptions} />
+            )}
+          </div>
+        </div>
+
+        <div className="dashboard-panel overflow-hidden">
+          <div className="dashboard-panel-header border-l-4 border-violet-700 px-3 py-2">
+            <h2 className="text-[11px] font-bold uppercase tracking-[0.15em]">Analyse détaillée</h2>
+          </div>
+          <div className="border-t border-slate-400/60 bg-white p-4">
+            {loading ? (
+              <div className="flex h-80 items-center justify-center text-xs uppercase tracking-wide text-slate-500">Chargement…</div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="h-64 min-h-[200px]">
+                  <Bar data={barData} options={barOptions} />
+                </div>
+                <div className="h-64 min-h-[200px]">
+                  <Pie data={pieData} options={pieOptions} />
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Tableau historique */}
-      <div className="bg-white rounded-xl shadow-md overflow-hidden">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold">Historique détaillé</h2>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="dashboard-panel overflow-hidden">
+          <div className="dashboard-panel-header border-l-4 border-slate-500 px-3 py-2">
+            <h3 className="text-[11px] font-bold uppercase tracking-[0.12em]">Top véhicules</h3>
+          </div>
+          <div className="border-t border-slate-400/60 bg-slate-50 p-4">
+            {loading ? (
+              <div className="text-xs text-slate-500">…</div>
+            ) : (
+              <ul className="space-y-2 font-mono text-sm">
+                {Object.entries(stats?.repartitionVehicules || {})
+                  .sort(([, a], [, b]) => b - a)
+                  .slice(0, 5)
+                  .map(([vehicule, count]) => (
+                    <li key={vehicule} className="flex justify-between border-b border-slate-200 pb-1 text-slate-800">
+                      <span className="truncate">{vehicule}</span>
+                      <span className="shrink-0 font-bold tabular-nums">{count}</span>
+                    </li>
+                  ))}
+              </ul>
+            )}
+          </div>
         </div>
-        
-        {loading ? (
-          <div className="p-8 text-center text-gray-500">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1e3a8a] mx-auto mb-4"></div>
-            Chargement de l'historique...
+
+        <div className="dashboard-panel overflow-hidden">
+          <div className="dashboard-panel-header border-l-4 border-red-800 px-3 py-2">
+            <h3 className="text-[11px] font-bold uppercase tracking-[0.12em]">Synthèse alertes</h3>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Heure
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Niveau
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Score
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Véhicule
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {(stats?.historique || []).slice(-20).reverse().map((event, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {event.date}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        event.niveau === 'SOMNOLENCE_CRITIQUE' ? 'bg-red-100 text-red-800' :
-                        event.niveau === 'FATIGUE_SEVERE' ? 'bg-orange-100 text-orange-800' :
-                        event.niveau === 'FATIGUE_MODEREE' ? 'bg-yellow-100 text-yellow-800' :
-                        event.niveau === 'FATIGUE_LEGERE' ? 'bg-blue-100 text-blue-800' :
-                        'bg-green-100 text-green-800'
-                      }`}>
-                        {event.niveau.replace('FATIGUE_', '').replace('_', ' ').toLowerCase()}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {event.score}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      TN-TEST-001
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="space-y-3 border-t border-slate-400/60 bg-slate-50 p-4 text-sm text-slate-800">
+            {loading ? (
+              <div className="text-xs text-slate-500">…</div>
+            ) : (
+              <>
+                <div className="flex justify-between font-mono">
+                  <span className="text-slate-600">Fatigue</span>
+                  <span className="font-bold text-red-700 tabular-nums">{stats?.alertesActives}</span>
+                </div>
+                <div className="flex justify-between font-mono">
+                  <span className="text-slate-600">Module</span>
+                  <span className="font-bold text-amber-800 tabular-nums">{stats?.alertesModuleActives}</span>
+                </div>
+                <div className="flex justify-between border-t border-slate-300 pt-2 font-mono font-bold">
+                  <span>Total</span>
+                  <span className="tabular-nums text-slate-900">{(stats?.alertesActives || 0) + (stats?.alertesModuleActives || 0)}</span>
+                </div>
+              </>
+            )}
           </div>
-        )}
-        
-        <div className="p-4 border-t border-gray-200 bg-gray-50 flex justify-end">
-          <button className="px-4 py-2 bg-[#1e3a8a] text-white rounded-lg hover:bg-[#1a327a] transition flex items-center">
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            Exporter CSV
-          </button>
+        </div>
+
+        <div className="dashboard-panel overflow-hidden md:col-span-2 lg:col-span-1">
+          <div className="dashboard-panel-header border-l-4 border-emerald-700 px-3 py-2">
+            <h3 className="text-[11px] font-bold uppercase tracking-[0.12em]">Performance</h3>
+          </div>
+          <div className="space-y-3 border-t border-slate-400/60 bg-slate-50 p-4 text-sm">
+            {loading ? (
+              <div className="text-xs text-slate-500">…</div>
+            ) : (
+              <>
+                <div className="flex justify-between font-mono">
+                  <span className="text-slate-600">Score moyen</span>
+                  <span className="font-bold tabular-nums">{stats?.moyenneScoreGlobal}</span>
+                </div>
+                <div className="flex justify-between font-mono">
+                  <span className="text-slate-600">Événements (paquets)</span>
+                  <span className="font-bold tabular-nums">{stats?.totalPaquets}</span>
+                </div>
+                <div className="flex justify-between font-mono">
+                  <span className="text-slate-600">Activité flotte</span>
+                  <span className="font-bold tabular-nums">
+                    {stats?.totalVehicules ? Math.round((stats.vehiculesActifs / stats.totalVehicules) * 100) : 0}%
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

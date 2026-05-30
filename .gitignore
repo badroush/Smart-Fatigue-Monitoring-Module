@@ -3,6 +3,8 @@ node_modules/
 vendor/
 .env
 .env.local
+sfam-db-firebase-adminsdk.json
+server/sfam-db-firebase-adminsdk.json
 
 ### IDE ###
 .idea/

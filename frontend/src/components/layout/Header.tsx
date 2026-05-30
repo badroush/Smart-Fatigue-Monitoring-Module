@@ -6,59 +6,74 @@ export default function Header() {
   const [search, setSearch] = useState('');
 
   const handleLogout = () => {
-    localStorage.removeItem('sfam_auth');
+    localStorage.removeItem('sfam_token');
+    localStorage.removeItem('sfam_role');
+    localStorage.removeItem('sfam_login');
     localStorage.removeItem('sfam_auth_time');
+    localStorage.removeItem('sfam_auth');
     navigate('/login');
   };
 
+  const displayLogin =
+    localStorage.getItem('sfam_login') || 'Utilisateur';
+  const displayRole =
+    localStorage.getItem('sfam_role') === 'admin'
+      ? 'Administrateur'
+      : localStorage.getItem('sfam_role') === 'superviseur'
+        ? 'Superviseur'
+        : 'Session';
+
   return (
-    <header className="bg-white shadow-sm">
-      <div className="flex items-center justify-between h-16 px-6">
-        <div className="flex-1 max-w-lg">
+    <header className="shrink-0 border-b border-slate-600 bg-slate-900">
+      <div className="flex h-14 items-center justify-between gap-4 px-4 sm:px-6">
+        <div className="hidden min-w-0 flex-1 max-w-lg sm:block">
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+              <svg className="h-4 w-4 text-slate-500" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
                 <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
               </svg>
             </div>
             <input
-              type="text"
+              type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Rechercher..."
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] focus:border-[#1e3a8a] sm:text-sm"
+              placeholder="Recherche globale…"
+              className="block w-full border border-slate-600 bg-slate-800 py-2 pl-9 pr-3 text-sm text-slate-100 placeholder-slate-500 focus:border-amber-600/80 focus:outline-none focus:ring-1 focus:ring-amber-600/50"
             />
           </div>
         </div>
-        
-        <div className="flex items-center space-x-4">
-          <button className="p-2 text-gray-400 hover:text-gray-500 rounded-full hover:bg-gray-100">
-            <span className="sr-only">Notifications</span>
-            <div className="relative">
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+        <div className="flex flex-1 items-center justify-end gap-2 sm:gap-4">
+          <button
+            type="button"
+            className="rounded border border-slate-700 p-2 text-slate-400 transition hover:border-slate-500 hover:bg-slate-800 hover:text-slate-200"
+            aria-label="Notifications"
+          >
+            <span className="relative inline-flex">
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
-              <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-[#ef4444] ring-2 ring-white"></span>
-            </div>
+              <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-red-600 ring-2 ring-slate-900" />
+            </span>
           </button>
-          
-          <div className="flex items-center space-x-3">
-            <div className="h-10 w-10 rounded-full bg-[#0ea5e9] flex items-center justify-center text-white font-bold">
+
+          <div className="flex items-center gap-3 border-l border-slate-700 pl-3 sm:pl-4">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center border border-slate-600 bg-slate-800 text-sm font-bold text-amber-400">
               S
             </div>
-            <div className="hidden md:block">
-              <div className="text-sm font-medium text-gray-700">Superviseur</div>
-              <div className="text-xs text-gray-500">Connecté</div>
+            <div className="hidden md:block min-w-0">
+              <div className="truncate text-xs font-semibold uppercase tracking-wide text-slate-200">
+                {displayLogin}
+              </div>
+              <div className="text-[10px] font-mono uppercase tracking-wider text-emerald-500/90">
+                {displayRole}
+              </div>
             </div>
-            
-            {/* Bouton Déconnexion */}
             <button
+              type="button"
               onClick={handleLogout}
-              className="ml-4 px-3 py-1.5 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition text-sm font-medium flex items-center"
+              className="shrink-0 border border-red-900/60 bg-red-950/40 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-red-300 transition hover:border-red-700 hover:bg-red-950/70"
             >
-              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
               Déconnexion
             </button>
           </div>

@@ -1,0 +1,19 @@
+{
+  "dashboard": {
+    "title": "لوحة القيادة",
+    "alerts": "التنبيهات",
+    "vehicles": "المُركبات",
+    "statistics": "الإحصائيات"
+  },
+  "alerts": {
+    "critical": "نعاس خطير",
+    "severe": "إرهاق شديد",
+    "acquitter": "إقرار",
+    "resoudre": "حل"
+  },
+  "settings": {
+    "language": "اللغة",
+    "refresh": "معدل التحديث",
+    "notifications": "الإشعارات"
+  }
+}

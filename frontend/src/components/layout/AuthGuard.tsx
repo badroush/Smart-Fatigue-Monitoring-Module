@@ -6,24 +6,23 @@ interface AuthGuardProps {
 
 export default function AuthGuard({ children }: AuthGuardProps) {
   const isAuthenticated = () => {
-    const auth = localStorage.getItem('sfam_auth');
+    const token = localStorage.getItem('sfam_token');
     const authTime = localStorage.getItem('sfam_auth_time');
-    
-    // Vérifier si l'authentification existe
-    if (!auth) return false;
-    
-    // Vérifier si la session n'a pas expiré (24h)
+
+    if (!token) return false;
+
     if (authTime) {
       const now = Date.now();
-      const expiryTime = parseInt(authTime) + 24 * 60 * 60 * 1000; // 24h en ms
-      
+      const expiryTime = parseInt(authTime, 10) + 24 * 60 * 60 * 1000;
       if (now > expiryTime) {
-        localStorage.removeItem('sfam_auth');
+        localStorage.removeItem('sfam_token');
+        localStorage.removeItem('sfam_role');
+        localStorage.removeItem('sfam_login');
         localStorage.removeItem('sfam_auth_time');
         return false;
       }
     }
-    
+
     return true;
   };
 

@@ -1,0 +1,19 @@
+{
+  "dashboard": {
+    "title": "Dashboard",
+    "alerts": "Alerts",
+    "vehicles": "Vehicles",
+    "statistics": "Statistics"
+  },
+  "alerts": {
+    "critical": "Critical drowsiness",
+    "severe": "Severe fatigue",
+    "acquitter": "Acknowledge",
+    "resoudre": "Resolve"
+  },
+  "settings": {
+    "language": "Language",
+    "refresh": "Refresh rate",
+    "notifications": "Notifications"
+  }
+}

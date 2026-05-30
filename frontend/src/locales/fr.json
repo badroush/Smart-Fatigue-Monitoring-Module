@@ -1,0 +1,19 @@
+{
+  "dashboard": {
+    "title": "Tableau de bord",
+    "alerts": "Alertes",
+    "vehicles": "Véhicules",
+    "statistics": "Statistiques"
+  },
+  "alerts": {
+    "critical": "Somnolence critique",
+    "severe": "Fatigue sévère",
+    "acquitter": "Acquitter",
+    "resoudre": "Résoudre"
+  },
+  "settings": {
+    "language": "Langue",
+    "refresh": "Rafraîchissement",
+    "notifications": "Notifications"
+  }
+}
