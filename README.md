@@ -42,6 +42,7 @@ text
 
 | Composant | Référence | Rôle |
 |-----------|-----------|------|
+| **LM2596** | Buck 12V → 5V | Alimentation stabilisée |
 | **Raspberry Pi 5** | SC1110, 2 Go RAM | Cerveau principal |
 | **Caméra CSI** | Module officiel | Acquisition visage |
 | **4 LED IR** | 850 nm, 5 mm | Éclairage nocturne |
@@ -49,7 +50,7 @@ text
 | **LDR LM393** | Numérique (DO) | Détection jour/nuit |
 | **RFID RC522** | SPI | Identification conducteur |
 | **OLED** (optionnel) | SSD1306, I2C | Affichage local |
-| **Transistor** | 2N2222 / BC337 | Commande IR LED |
+| **Transistor** | 2N2222 / BC547 | Commande IR LED |
 
 ### Module caché (énergie & actionneurs)
 
@@ -61,7 +62,7 @@ text
 | **SIM800L** | GSM | Envoi SMS d’alerte |
 | **GPS NEO-6M** | UART (UART3) | Géolocalisation |
 | **Relais 5V** | SRD-05VDC-SL-C | Sonnette + clignotants |
-| **Diode OR** | 1N4007 / 1N5400 | Basculement automatique |
+| **Diode OR** | 1N4007 / 1N5402 | Basculement automatique |
 
 ### Interconnexion
 
